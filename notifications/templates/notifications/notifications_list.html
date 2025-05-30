@@ -1,0 +1,15 @@
+<h2>My Notifications</h2>
+<ul>
+    {% for note in notifications %}
+        <li {% if not note.is_read %}style="font-weight:bold;"{% endif %}>
+            <strong>From:</strong> {{ note.sender.username }}<br>
+            <strong>Subject:</strong> {{ note.subject }}<br>
+            <strong>Message:</strong> {{ note.message }}<br>
+            <strong>Ticket ID:</strong> {{ note.ticket_id }}<br>
+            <em>{{ note.timestamp|date:"M d, Y H:i" }}</em>
+            <hr>
+        </li>
+    {% empty %}
+        <li>No notifications.</li>
+    {% endfor %}
+</ul>
