@@ -1,0 +1,15 @@
+
+{% block content %}
+<h2>Your Notifications</h2>
+<ul>
+  {% for n in notifications %}
+    <li>
+      <strong>{{ n.subject }}</strong><br>
+      {{ n.message }}<br>
+      <small>{{ n.created_at }}</small>
+    </li>
+  {% empty %}
+    <li>No notifications yet.</li>
+  {% endfor %}
+</ul>
+{% endblock %}
