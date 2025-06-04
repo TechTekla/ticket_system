@@ -1,5 +1,5 @@
 from django.db import models
-from usegit rs.models import User
+from users.models import User
 from django.utils import timezone
 
 class Department(models.Model):
