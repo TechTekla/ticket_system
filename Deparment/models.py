@@ -20,6 +20,7 @@ class Client(models.Model):
         return self.name
 
 class Ticket(models.Model):
+    
     subject = models.CharField(max_length=255)
     description = models.TextField()
     priority = models.CharField(max_length=50, choices=[('Low', 'Low'), ('Medium', 'Medium'), ('High', 'High')])
