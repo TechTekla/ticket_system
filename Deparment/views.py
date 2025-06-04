@@ -1,134 +1,69 @@
-from rest_framework import viewsets, permissions, status
-from rest_framework.response import Response
-from rest_framework.decorators import action
-from django.utils import timezone
-from .models import Department, Client, Ticket, TicketResponse
-from .serializers import (
-    DepartmentSerializer,
-    ClientSerializer,
-    TicketSerializer,
-    TicketResponseSerializer
-)
+import http.server
+import socketserver
+import json
+import urllib.parse
 
-# Standard permission for authenticated users
-class IsAuthenticatedOrReadOnly(permissions.IsAuthenticatedOrReadOnly):
-    """
-    Custom permission to only allow authenticated users to create/update/delete.
-    Allows read-only access for unauthenticated users.
-    """
-    pass
+# --- Simulate Data (instead of database interaction) ---
+# In a real app, you'd fetch this from your Ticket model
+tickets_data = [
+    {"id": 1, "subject": "Printer Issue", "description": "Printer in office 3 not working.", "priority": "High", "status": "Open"},
+    {"id": 2, "subject": "Software Install", "description": "Need Photoshop installed on my PC.", "priority": "Medium", "status": "In Progress"},
+    {"id": 3, "subject": "Network Slow", "description": "Internet connection is very slow today.", "priority": "High", "status": "Resolved"},
+]
+def get_all_tickets():
+    """Simulates a view to return all tickets."""
+    return json.dumps(tickets_data).encode('utf-8'), 'application/json', 200
 
-class DepartmentViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows departments to be viewed or edited.
-    """
-    queryset = Department.objects.all().order_by('name')
-    serializer_class = DepartmentSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly] # Only authenticated users can modify
+def get_ticket_detail(ticket_id):
+    """Simulates a view to return a single ticket by ID."""
+    try:
+        ticket_id = int(ticket_id)
+        ticket = next((t for t in tickets_data if t["id"] == ticket_id), None)
+        if ticket:
+            return json.dumps(ticket).encode('utf-8'), 'application/json', 200
+        else:
+            return json.dumps({"error": "Ticket not found"}).encode('utf-8'), 'application/json', 404
+    except ValueError:
+        return json.dumps({"error": "Invalid ticket ID"}).encode('utf-8'), 'application/json', 400
 
-class ClientViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows clients to be viewed or edited.
-    """
-    queryset = Client.objects.all().order_by('name')
-    serializer_class = ClientSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+def handle_not_found():
+    """Simulates a 404 Not Found view."""
+    return json.dumps({"error": "Not Found"}).encode('utf-8'), 'application/json', 404
 
-class TicketViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows tickets to be viewed or edited.
-    Users can only see tickets they created, are assigned to, or tickets from clients
-    associated with their department (if applicable, though not explicitly modeled here).
-    Admins can see all tickets.
-    """
-    queryset = Ticket.objects.all().order_by('-created_at')
-    serializer_class = TicketSerializer
-    # Only authenticated users can create/update/delete tickets.
-    # For read operations, we'll filter based on user.
-    permission_classes = [permissions.IsAuthenticated]
+# --- Basic "Routing" (manual URL dispatch) ---
+# This is where you map paths to your "view" functions
+def route_request(path, query_params):
+    if path == '/tickets':
+        return get_all_tickets()
+    elif path.startswith('/tickets/'):
+        parts = path.split('/')
+        if len(parts) == 3 and parts[2].isdigit(): # /tickets/ID
+            ticket_id = parts[2]
+            return get_ticket_detail(ticket_id)
+    return handle_not_found() # Default for unhandled paths
 
-    def get_queryset(self):
-        """
-        Optionally restricts the returned tickets to a given user,
-        by filtering against `created_by` or `assigned_to` or if the user is a superuser.
-        """
-        user = self.request.user
-        if user.is_superuser:
-            return Ticket.objects.all().order_by('-created_at')
-        
-        # Non-superusers can see tickets they created or are assigned to
-        return Ticket.objects.filter(
-            created_by=user
-        ).union(
-            Ticket.objects.filter(assigned_to=user)
-        ).order_by('-created_at')
+# --- Custom HTTP Request Handler ---
+class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        parsed_url = urllib.parse.urlparse(self.path)
+        path = parsed_url.path
+        query_params = urllib.parse.parse_qs(parsed_url.query)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
-    def resolve(self, request, pk=None):
-        """
-        Custom action to mark a ticket as 'Resolved'.
-        """
-        ticket = self.get_object()
-        if ticket.status == 'Resolved':
-            return Response({'detail': 'Ticket is already resolved.'}, status=status.HTTP_200_OK)
-        
-        ticket.status = 'Resolved'
-        ticket.save()
-        return Response({'detail': f'Ticket {ticket.id} marked as Resolved.', 'status': ticket.status})
+        content, content_type, status_code = route_request(path, query_params)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
-    def close(self, request, pk=None):
-        """
-        Custom action to mark a ticket as 'Closed'.
-        """
-        ticket = self.get_object()
-        if ticket.status == 'Closed':
-            return Response({'detail': 'Ticket is already closed.'}, status=status.HTTP_200_OK)
+        self.send_response(status_code)
+        self.send_header('Content-type', content_type)
+        self.end_headers()
+        self.wfile.write(content)
 
-        ticket.status = 'Closed'
-        ticket.save()
-        return Response({'detail': f'Ticket {ticket.id} marked as Closed.', 'status': ticket.status})
+# --- Server Setup ---
+PORT = 8000
 
-    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
-    def expired_tickets(self, request):
-        """
-        Returns a list of tickets marked as expired.
-        """
-        # This assumes 'is_expired' is set by a separate process (e.g., a cron job or management command)
-        # For demonstration, we'll just filter by the field.
-        expired_tickets = Ticket.objects.filter(is_expired=True).order_by('-created_at')
-        serializer = self.get_serializer(expired_tickets, many=True)
-        return Response(serializer.data)
-
-
-class TicketResponseViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows ticket responses to be viewed or edited.
-    Users can only see responses for tickets they have access to or responses they made.
-    """
-    queryset = TicketResponse.objects.all().order_by('-created_at')
-    serializer_class = TicketResponseSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        """
-        Restricts the returned responses to those associated with tickets
-        the user has access to, or responses made by the user.
-        """
-        user = self.request.user
-        if user.is_superuser:
-            return TicketResponse.objects.all().order_by('-created_at')
-        
-        # Get tickets the user has access to (created or assigned)
-        accessible_tickets = Ticket.objects.filter(
-            created_by=user
-        ).union(
-            Ticket.objects.filter(assigned_to=user)
-        ).values_list('id', flat=True) # Get just the IDs
-
-        # Return responses for those tickets OR responses made by the user
-        return TicketResponse.objects.filter(
-            ticket__id__in=list(accessible_tickets)
-        ).union(
-            TicketResponse.objects.filter(responded_by=user)
-        ).order_by('-created_at')
+if __name__ == "__main__":
+    Handler = SimpleHTTPRequestHandler
+    with socketserver.TCPServer(("", PORT), Handler) as httpd:
+        print(f"Serving at port {PORT}")
+        print(f"Try: http://localhost:{PORT}/tickets")
+        print(f"Try: http://localhost:{PORT}/tickets/1")
+        print(f"Try: http://localhost:{PORT}/tickets/99")
+        httpd.serve_forever()

@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'ticketapp',
     'Deparment',
     'notifications',
-    'rest_framework',
+    
 ]
 
 MIDDLEWARE = [
