@@ -1,5 +1,9 @@
 from django.db import models
+<<<<<<< HEAD
 from users.models import User 
+=======
+from usegit rs.models import User
+>>>>>>> 47d43c301acbe053fab37678c61ad53d095a33c6
 from django.utils import timezone
 
 

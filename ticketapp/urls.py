@@ -10,5 +10,8 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
 urlpatterns = [
-    path('',)
+    path('tickets/', ticket_list, name='ticket_list'),
+path('tickets/submit/', submit_ticket, name='submit_ticket'),
+path('tickets/<int:ticket_id>/', ticket_detail, name='ticket_detail'),
+path('tickets/<int:ticket_id>/update/', update_ticket_status, name='update_ticket'),
 ]

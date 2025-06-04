@@ -42,7 +42,11 @@ INSTALLED_APPS = [
     'ticketapp',
     'Deparment',
     'notifications',
+<<<<<<< HEAD
     'users',
+=======
+    
+>>>>>>> 47d43c301acbe053fab37678c61ad53d095a33c6
 ]
 
 MIDDLEWARE = [
