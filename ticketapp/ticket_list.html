@@ -1,0 +1,35 @@
+<!-- used for viewing all tickets -->
+{% extends 'base.html' %}
+{% block content %}
+<h2>All Tickets</h2>
+<table border="1">
+    <thead>
+        <tr>
+            <th>T_ID</th>
+            <th>Subject</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Department</th>
+            <th>Resolve Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ticket in tickets %}
+        <tr>
+            <td>{{ ticket.id }}</td>
+            <td>{{ ticket.subject }}</td>
+            <td>{{ ticket.status }}</td>
+            <td>{{ ticket.priority }}</td>
+            <td>{{ ticket.department }}</td>
+            <td>{{ ticket.resolve_date|date:"Y-m-d" }}</td>
+            <td>
+                <a href="{% url 'ticket_detail' ticket.id %}">View</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7">No tickets found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

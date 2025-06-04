@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Update Ticket: {{ ticket.subject }}</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group mb-3">
+            <label for="status">Status</label>
+            <select name="status" class="form-control" required>
+                <option value="Open" {% if ticket.status == "Open" %}selected{% endif %}>Open</option>
+                <option value="In Progress" {% if ticket.status == "In Progress" %}selected{% endif %}>In Progress</option>
+                <option value="Resolved" {% if ticket.status == "Resolved" %}selected{% endif %}>Resolved</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Update Status</button>
+        <a href="{% url 'ticket_detail' ticket.id %}" class="btn btn-secondary">Back</a>
+    </form>
+</div>
+{% endblock %}
+<!--shows a back button to go back to the ticket detail page -->
+<!-- pre selects the current status of the ticket-->

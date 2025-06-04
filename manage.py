@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
 # management/commands/expire_old_tickets.py
 from django.core.management.base import BaseCommand
-from .ticketapp.models import Ticket
+from ticketapp.models import Ticket
 from django.utils import timezone
 from datetime import timedelta
 

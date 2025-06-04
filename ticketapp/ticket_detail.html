@@ -1,0 +1,18 @@
+<!-- this for viewing a single ticket -->
+{% extends 'base.html' %}
+{% block content %}
+<h2>Ticket Detail - {{ ticket.subject }}</h2>
+
+<ul>
+    <li><strong>T_ID:</strong> {{ ticket.id }}</li>
+    <li><strong>Client:</strong> {{ ticket.clientID }}</li>
+    <li><strong>Subject:</strong> {{ ticket.subject }}</li>
+    <li><strong>Description:</strong> {{ ticket.description }}</li>
+    <li><strong>Status:</strong> {{ ticket.status }}</li>
+    <li><strong>Priority:</strong> {{ ticket.priority }}</li>
+    <li><strong>Department:</strong> {{ ticket.department }}</li>
+    <li><strong>Resolve Date:</strong> {{ ticket.resolve_date|date:"Y-m-d" }}</li>
+</ul>
+
+<a href="{% url 'ticket_list' %}">Back to Ticket List</a>
+{% endblock %}
