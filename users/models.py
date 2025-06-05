@@ -5,7 +5,7 @@ from django.contrib.auth.models import AbstractUser
 
 
 #what the database is supposed to have 
-# firstame,second_name, phone number , email , gender, created ,updated 
+# firstame,second_name, phone number , email , gender, id,created ,updated 
 
 class User(AbstractUser):
     gender =  [("male","male"),("female","female")]
@@ -15,6 +15,7 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=10,default = 0000000000)
     email = models.EmailField(max_length = 100,unique = True,default = "ticket@gmail.com")
     gender =  models.CharField(choices = gender )
+    id_number = models.CharField(max_length=20, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add = True)
     updated_at = models.DateTimeField(auto_now = True)
 
